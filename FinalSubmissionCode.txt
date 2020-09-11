@@ -1,0 +1,142 @@
+Sub RunOnAllSheets()
+        
+    'ITERATE THROUGH ALL WORKSHEETS IN WORKBOOK
+    
+    'declare var
+    Dim ThisSheet As Worksheet
+    
+    'Main Loop for Opening sheets and running calculation code
+    For Each ThisSheet In Worksheets
+        ThisSheet.Select
+        Call VBChallengeSub
+    Next
+End Sub
+
+
+
+Sub VBChallengeSub()
+        
+        'format cells of data
+        Range("B:B").NumberFormat = "General"
+        Range("C:C").NumberFormat = "0.00"
+        Range("D:D").NumberFormat = "0.00"
+        Range("E:E").NumberFormat = "0.00"
+        Range("F:F").NumberFormat = "0.00"
+        Range("G:G").NumberFormat = "0"
+        
+        'count rows to allow for not knowing exact number of rows for iteration
+        Dim RowCount As Long
+        RowCount = Cells(Rows.Count, 1).End(xlUp).Row
+        
+        'declare and set intial values for all iteration vars
+        Dim i As Long 'iterative
+        Dim o As Double 'open
+        Dim c As Double 'close
+        Dim vol As Double 'volume
+        Dim outrow As Long 'output row
+        Dim tickercurrent As String 'ticker name for current iteration
+        Dim tickernext As String 'ticker name of upcoming
+        o = 0
+        c = 0
+        vol = 0
+        outrow = 1
+        
+        'iterate through data to make calculations and output results
+        For i = 2 To RowCount
+            vol = vol + Cells(i, 7) 'sum vol for stock
+            tickercurrent = Cells(i, 1).Value
+            tickernext = Cells(i + 1, 1).Value
+            If o = 0 Then 'establish val of o
+                o = Cells(i, 3).Value
+            End If
+            If tickernext <> tickercurrent Then 'output results for current stock
+                c = Cells(i, 6).Value
+                outrow = outrow + 1
+                Cells(outrow, 9).Value = Cells(i, 1).Value
+                Cells(outrow, 10).Value = c - o
+                If o <> 0 Then 'shortcut div by zero errors
+                    Cells(outrow, 11).Value = ((c - o) / o) * 100
+                End If
+                Cells(outrow, 12).Value = vol
+                'reset variables for next stock
+                c = 0
+                o = 0
+                vol = 0
+            End If
+        Next i
+        
+        'format cells in results, make headers, and autofit colums
+        Range("K:K").NumberFormat = "0.00"
+        Range("L:L").NumberFormat = "0.00"
+        Range("I1:Q1").Font.Bold = True
+        Range("I1").Value = "Ticker"
+        Range("J1").Value = "Yearly Change"
+        Range("K1").Value = "Percent Change"
+        Range("L1").Value = "Total Volume"
+        Range("A:L").Columns.AutoFit
+        
+        'conditional formatting iteration for Yearly Change column
+        Dim r As Range
+        For i2 = 2 To RowCount
+            Set r = Range("J" & i2)
+            If r.Value < 0 Then
+                r.Interior.Color = vbRed
+            Else: r.Interior.Color = vbGreen
+            End If
+        Next i2
+        
+        
+        'Bonus Challenge Code
+        
+        'declare working variables
+        Dim hiup As Double
+        Dim hidown As Double
+        Dim hivol As Double
+        Dim hiuprow As Long
+        Dim hidownrow As Long
+        Dim hivolrow As Long
+        Dim hiuptick As String
+        Dim hidowntick As String
+        Dim hivoltick As String
+        
+        'declare range variables and set values
+        Dim changerange As Range
+        Dim volrange As Range
+        Set changerange = ActiveSheet.Range(Cells(2, 10), Cells(RowCount, 10))
+        Set volrange = ActiveSheet.Range(Cells(2, 12), Cells(RowCount, 12))
+        
+        'result values
+        hiup = Application.WorksheetFunction.Max(changerange)
+        hidown = Application.WorksheetFunction.Min(changerange)
+        hivol = Application.WorksheetFunction.Max(volrange)
+        
+        'Labels and autofit columns
+        Range("N2").Value = "Greatest % Increase"
+        Range("N3").Value = "Greatest % Decrease"
+        Range("N4").Value = "Greatest Total Volume"
+        Range("N2:N4").Font.Bold = True
+        Range("N:Q").Columns.AutoFit
+        Range("O1").Value = "Ticker"
+        Range("P1").Value = "Value"
+        
+        'results output
+        Range("P2").Value = hiup
+        Range("P3").Value = hidown
+        Range("P4").Value = hivol
+        
+        'row addreses for the results values
+        hiuprow = changerange.Find(what:=hiup).Row
+        hidownrow = changerange.Find(what:=hidown).Row
+        hivolrow = volrange.Find(what:=hivol).Row
+        
+        'tickers of results values
+        hiuptick = Cells(hiuprow, 9).Value
+        hidowntick = Cells(hidownrow, 9).Value
+        hivoltick = Cells(hivolrow, 9).Value
+        
+        'ticker output
+        Range("O2").Value = hiuptick
+        Range("O3").Value = hidowntick
+        Range("O4").Value = hivoltick
+    
+End Sub
